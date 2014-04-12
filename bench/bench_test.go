@@ -165,5 +165,5 @@ func TestRecursiveLCS(t *testing.T) {
 }
 
 func TestDynamicLCS(t *testing.T) {
-	println(dynamiclcs("abcdefg", "abckefg`"))
+	println(dynamiclcs("abcdefg", "abckefgefg"))
 }

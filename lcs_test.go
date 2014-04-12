@@ -55,7 +55,7 @@ func TestDiff(t *testing.T) {
 var wordfixtures = [][]string{
 	{
 		"a simple word that is in test shape.a simple word that is in test shape.a simple word that is in test shape.a simple word that is in test shape.",
-		"a simple that is in test shape.a simple that is in test shape.a simple that is in test shape.a simple that is in test shape.a simple that is in test shape.",
+		"a simple that is in test shape.a simple that is in test shape. a simple that is in test shape.a simple that is in test shape.a simple that is in test shape.",
 		"a simple [word] that is in test shape.",
 	},
 	// 	{
@@ -83,7 +83,7 @@ func TestArticle(t *testing.T) {
 		ori, edit := newArticle(strings.NewReader(f[0])), newArticle(strings.NewReader(f[1]))
 		diff := Diff(ori, edit, LCS(ori, edit))
 		if diff.(*article).String() != f[2] {
-			t.Errorf("Diff(\"%s\", \"%s\"), expect: \"%s\", got: \"%s\"", f[0], f[1], f[2], diff)
+			t.Errorf("Diff(\n\"%s\", \n\"%s\")\nexpect: \"%s\"\ngot: \"%s\"", f[0], f[1], f[2], diff)
 		}
 	}
 }

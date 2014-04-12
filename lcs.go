@@ -8,18 +8,6 @@ import (
 	"sync"
 )
 
-// type prose struct {
-// 	content string
-// 	words   []word
-// }
-
-// type word struct {
-// 	content string
-// }
-
-// func (p *prose) get(i int) word {
-// }
-
 type prose interface {
 	new() prose
 	len() int
@@ -44,7 +32,9 @@ type article struct {
 	terms []*term
 }
 
-var puncs = ",-!;:\"?.\n "
+var (
+	puncs = ",-!;:\"?.\n "
+)
 
 func newArticle(ori io.Reader) *article {
 	a := article{id: genSpId()}
@@ -55,6 +45,9 @@ func newArticle(ori io.Reader) *article {
 		w := scanner.Text()
 		if i := strings.LastIndexAny(w, puncs); len(w) > 1 && i != -1 {
 			a.terms = append(a.terms, newTerm(w[:i]), newTerm(string(w[i])))
+			if i < len(w)-1 {
+				a.terms = append(a.terms, newTerm(w[i+1:]))
+			}
 		} else {
 			a.terms = append(a.terms, newTerm(w))
 		}
@@ -64,12 +57,22 @@ func newArticle(ori io.Reader) *article {
 
 func (a *article) String() (str string) {
 	for i, term := range a.terms {
-		if i > 0 && !strings.ContainsAny(a.terms[i-1].string, puncs) {
-			str += " "
+		if !strings.ContainsAny(a.terms[i].string, puncs) {
+			if i > 0 && !isOpenMarks(a.terms[i-1].string) && !isCloseMarks(a.terms[i].string) {
+				str += " "
+			}
 		}
 		str += term.string
 	}
 	return
+}
+
+func isOpenMarks(m string) bool {
+	return m == "[" || m == "("
+}
+
+func isCloseMarks(m string) bool {
+	return m == "]" || m == ")"
 }
 
 func (a article) new() prose {
@@ -278,25 +281,6 @@ func (b byteWord) String() string {
 	return string(b.byte)
 }
 
-// lenx := x.len()
-// leny := y.len()
-// // println(lenx, leny)
-// if lenx == 0 || leny == 0 {
-// 	return x.new()
-// } else if x.word(lenx - 1).isEqual(y.word(leny - 1)) {
-// 	lcs := LCS(x.slice(0, lenx-1), y.slice(0, leny-1))
-// 	lcs.appendWord(x.word(lenx - 1))
-// 	return lcs
-// }
-// // println(leny - 1)
-// // log.Printf("--> %+v\n", y)
-// lcsx := LCS(x, y.slice(0, leny-1))
-// lcsy := LCS(x.slice(0, lenx-1), y)
-// if lcsx.len() > lcsy.len() {
-// 	return lcsx
-// }
-// return lcsy
-
 func LCS(a, b prose) prose {
 	aLen := a.len()
 	bLen := b.len()
@@ -304,8 +288,8 @@ func LCS(a, b prose) prose {
 	for i := 0; i <= aLen; i++ {
 		lengths[i] = make([]int, bLen+1)
 	}
-	// row 0 and column 0 are initialized to 0 already
 
+	// row 0 and column 0 are initialized to 0 already
 	for i := 0; i < aLen; i++ {
 		for j := 0; j < bLen; j++ {
 			if a.word(i).isEqual(b.word(j)) {
@@ -318,8 +302,11 @@ func LCS(a, b prose) prose {
 		}
 	}
 
+	// for _, r := range lengths {
+	// 	fmt.Println(r)
+	// }
+
 	// read the substring out from the matrix
-	// s := make([]byte, 0, lengths[aLen][bLen])
 	s := a.new()
 	for x, y := aLen, bLen; x != 0 && y != 0; {
 		if lengths[x][y] == lengths[x-1][y] {
@@ -327,22 +314,18 @@ func LCS(a, b prose) prose {
 		} else if lengths[x][y] == lengths[x][y-1] {
 			y--
 		} else {
-			// s = append(s, a[x-1])
 			w := a.word(x - 1)
 			w.indexIn(a, x-1)
-			w.indexIn(b, y)
+			w.indexIn(b, y-1)
 			s.appendWord(w)
 			x--
 			y--
 		}
 	}
-	// reverse string
-	// r := make([]byte, len(s))
 
-	// for i := 0; i < len(s); i++ {
+	// reverse string
 	r := a.new()
 	for i := 0; i < s.len(); i++ {
-		// r[i] = s[len(s)-1-i]
 		r.appendWord(s.word(s.len() - 1 - i))
 	}
 	return r
@@ -371,7 +354,7 @@ func Diff(ori, edit, lcs prose) prose {
 			// deletion
 			// fmt.Printf("--> %+v\n", w.(*term).pos)
 			// println(w.(*term).string)
-			println(lastIOri+1, oi)
+			// println(lastIOri+1, oi)
 			// fmt.Println(ori.(*article).id)
 			del := ori.slice(lastIOri+1, oi)
 			if del.len() > 0 {
