@@ -2,7 +2,6 @@ package lcs
 
 import (
 	"strings"
-
 	"testing"
 )
 
@@ -53,37 +52,61 @@ func TestDiff(t *testing.T) {
 }
 
 var wordfixtures = [][]string{
+	// {
+	// 	"a simple word that is in test shape.a simple word that is in test shape.a simple word that is in test shape.a simple word that is in test shape.",
+	// 	"a simple that is in test shape.a simple that is in test shape. a simple that is in test shape.a simple that is in test shape.a simple that is in test shape.",
+	// 	"a simple [word] that is in test shape. a simple [word] that is in test shape. a simple [word] that is in test shape. a simple [word] that is in test shape. (a simple that is in test shape.)",
+	// },
 	{
-		"a simple word that is in test shape.a simple word that is in test shape.a simple word that is in test shape.a simple word that is in test shape.",
-		"a simple that is in test shape.a simple that is in test shape. a simple that is in test shape.a simple that is in test shape.a simple that is in test shape.",
-		"a simple [word] that is in test shape.",
+		`he was an old man who fished alone in a skiff in the Gulf Stream and he had gone eighty-four days now without taking a fish. In the first forty days a boy had been with him. But after forty days without a fish the boy’s parents had told him that the old man was now definitely and finally salao, which is the worst form of unlucky, and the boy had gone at their orders in another boat which caught three good fish the first week. It made the boy sad to see the old man come in each day with his skiff empty and he always went down to help him carry either the coiled lines or the gaff and harpoon and the sail that was furled around the mast. The sila was patched with flour sacks and, furled, it looked like the flag of permanent defeat.
+
+The old man was thin and gaunt with deep wrinkles in the back of his neck. The brown blotches of the benevolent skin cancer the sun brings from its [9] reflection on the tropic sea were on his cheeks. The blotches ran well down the sides of his face and his hands had the deep-creased scars from handling heavy fish on the cords. But none of these scars were fresh. They were as old as erosions in a fishless desert.
+
+Everything about him was old except his eyes and they were the same color as the sea and were cheerful and undefeated.`,
+		`He was an old man who fished alone in a skiff in the Gulf Stream and he had gone eighty-four days now without taking a fish. In the first forty days a boy had been with him. But after forty days without a fish the boy’s parents had told him that the old man was now definitely and finally salao, which is the worst form of unlucky, and the boy had gone at their orders in another boat which caught three good fish the first week. It made the boy sad to see the old man come in each day with his skiff empty and he always went down to help him carry either the coiled lines or the gaff and harpoon and the sail that was furled around the mast. The sail was patched with flour sacks and, furled, it looked like the flag of permanent defeat.
+
+The old man was thin and gaunt with deep wrinkles in the back of his neck. The brown blotches of the benevolent skin cancer the sun brings from its [9] reflection on the tropic sea were on his cheeks. The blotches ran well down the sides of his face and his hands had the deep-creased scars from handling heavy fish on the cords. But none of these scars were fresh. They were as old as erosions in a fishless desert.
+
+Everything about him was old except his eyes and they were the same color as the sea and were cheerful and undefeated.`,
+
+		`[he] (He) was an old man who fished alone in a skiff in the Gulf Stream and he had gone eighty-four days now without taking a fish. In the first forty days a boy had been with him. But after forty days without a fish the boy’s parents had told him that the old man was now definitely and finally salao, which is the worst form of unlucky, and the boy had gone at their orders in another boat which caught three good fish the first week. It made the boy sad to see the old man come in each day with his skiff empty and he always went down to help him carry either the coiled lines or the gaff and harpoon and the sail that was furled around the mast. The [sila] (sail) was patched with flour sacks and, furled, it looked like the flag of permanent defeat.
+
+The old man was thin and gaunt with deep wrinkles in the back of his neck. The brown blotches of the benevolent skin cancer the sun brings from its [9] reflection on the tropic sea were on his cheeks. The blotches ran well down the sides of his face and his hands had the deep-creased scars from handling heavy fish on the cords. But none of these scars were fresh. They were as old as erosions in a fishless desert.
+
+Everything about him was old except his eyes and they were the same color as the sea and were cheerful and undefeated.`,
 	},
-	// 	{
-	// 		`he was an old man who fished alone in a skiff in the Gulf Stream and he had gone eighty-four days now without taking a fish. In the first forty days a boy had been with him. But after forty days without a fish the boy’s parents had told him that the old man was now definitely and finally salao, which is the worst form of unlucky, and the boy had gone at their orders in another boat which caught three good fish the first week. It made the boy sad to see the old man come in each day with his skiff empty and he always went down to help him carry either the coiled lines or the gaff and harpoon and the sail that was furled around the mast. The sila was patched with flour sacks and, furled, it looked like the flag of permanent defeat.
-
-	// The old man was thin and gaunt with deep wrinkles in the back of his neck. The brown blotches of the benevolent skin cancer the sun brings from its [9] reflection on the tropic sea were on his cheeks. The blotches ran well down the sides of his face and his hands had the deep-creased scars from handling heavy fish on the cords. But none of these scars were fresh. They were as old as erosions in a fishless desert.
-
-	// Everything about him was old except his eyes and they were the same color as the sea and were cheerful and undefeated.`,
-	// 		`He was an old man who fished alone in a skiff in the Gulf Stream and he had gone eighty-four days now without taking a fish. In the first forty days a boy had been with him. But after forty days without a fish the boy’s parents had told him that the old man was now definitely and finally salao, which is the worst form of unlucky, and the boy had gone at their orders in another boat which caught three good fish the first week. It made the boy sad to see the old man come in each day with his skiff empty and he always went down to help him carry either the coiled lines or the gaff and harpoon and the sail that was furled around the mast. The sail was patched with flour sacks and, furled, it looked like the flag of permanent defeat.
-
-	// The old man was thin and gaunt with deep wrinkles in the back of his neck. The brown blotches of the benevolent skin cancer the sun brings from its [9] reflection on the tropic sea were on his cheeks. The blotches ran well down the sides of his face and his hands had the deep-creased scars from handling heavy fish on the cords. But none of these scars were fresh. They were as old as erosions in a fishless desert.
-
-	// Everything about him was old except his eyes and they were the same color as the sea and were cheerful and undefeated.`,
-
-	// 		`[he](He) was an old man who fished alone in a skiff in the Gulf Stream and he had gone eighty-four days now without taking a fish. In the first forty days a boy had been with him. But after forty days without a fish the boy’s parents had told him that the old man was now definitely and finally salao, which is the worst form of unlucky, and the boy had gone at their orders in another boat which caught three good fish the first week. It made the boy sad to see the old man come in each day with his skiff empty and he always went down to help him carry either the coiled lines or the gaff and harpoon and the sail that was furled around the mast. The [sila](sail) was patched with flour sacks and, furled, it looked like the flag of permanent defeat.
-
-	// The old man was thin and gaunt with deep wrinkles in the back of his neck. The brown blotches of the benevolent skin cancer the sun brings from its [9] reflection on the tropic sea were on his cheeks. The blotches ran well down the sides of his face and his hands had the deep-creased scars from handling heavy fish on the cords. But none of these scars were fresh. They were as old as erosions in a fishless desert.
-
-	// Everything about him was old except his eyes and they were the same color as the sea and were cheerful and undefeated.`,
-	// 	},
 }
 
 func TestArticle(t *testing.T) {
+	// fmt.Println(distillTerms("something.\n"))
 	for _, f := range wordfixtures {
 		ori, edit := newArticle(strings.NewReader(f[0])), newArticle(strings.NewReader(f[1]))
-		diff := Diff(ori, edit, LCS(ori, edit))
+		lcs := LCS(ori, edit)
+		diff := Diff(ori, edit, lcs)
 		if diff.(*article).String() != f[2] {
-			t.Errorf("Diff(\n\"%s\", \n\"%s\")\nexpect: \"%s\"\ngot: \"%s\"", f[0], f[1], f[2], diff)
+			t.Errorf("Diff(\n%q, \n%q)\nexpect: %q\ngot: %q", f[0], f[1], f[2], diff)
 		}
 	}
+}
+
+func TestDistillTerms(t *testing.T) {
+	c := "defeat.\nthe"
+	got := distillTerms(c)
+	want := []*term{newTerm("defeat"), newTerm("."), newTerm("\n"), newTerm("the")}
+	if !isEqualTerms(got, want) {
+		t.Errorf("distillTerms(%q):\nExpect: %q\nGot:    %q", c, want, got)
+	}
+}
+
+func isEqualTerms(a, b []*term) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, _ := range a {
+		if b[i].string != a[i].string {
+			return false
+		}
+	}
+
+	return true
 }

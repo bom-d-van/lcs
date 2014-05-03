@@ -3,6 +3,7 @@ package lcs
 import (
 	"bufio"
 	"io"
+	"regexp"
 	"strings"
 
 	"sync"
@@ -14,9 +15,9 @@ type prose interface {
 	word(i int) word
 	slice(i, j int) prose
 	append(op prose)
-	prepend(op prose)
+	// prepend(op prose)
 	appendWord(w word)
-	prependWord(w word)
+	// prependWord(w word)
 	wrapDel()
 	wrapIns()
 }
@@ -33,46 +34,94 @@ type article struct {
 }
 
 var (
-	puncs = ",-!;:\"?.\n "
+	// puncs = ",!;:\"?.\n"
+	puncs = regexp.MustCompile("[,!;:\"?\\.]$")
 )
 
 func newArticle(ori io.Reader) *article {
 	a := article{id: genSpId()}
 	scanner := bufio.NewScanner(ori)
-	scanner.Split(bufio.ScanWords)
+	scanner.Split(scanWords)
 
 	for scanner.Scan() {
 		w := scanner.Text()
-		if i := strings.LastIndexAny(w, puncs); len(w) > 1 && i != -1 {
-			a.terms = append(a.terms, newTerm(w[:i]), newTerm(string(w[i])))
-			if i < len(w)-1 {
-				a.terms = append(a.terms, newTerm(w[i+1:]))
-			}
-		} else {
-			a.terms = append(a.terms, newTerm(w))
-		}
+		a.terms = append(a.terms, distillTerms(w)...)
 	}
 	return &a
 }
 
-func (a *article) String() (str string) {
-	for i, term := range a.terms {
-		if !strings.ContainsAny(a.terms[i].string, puncs) {
-			if i > 0 && !isOpenMarks(a.terms[i-1].string) && !isCloseMarks(a.terms[i].string) {
-				str += " "
-			}
+func distillTerms(w string) (r []*term) {
+	if i := strings.Index(w, "\n"); i != -1 {
+		if i == 0 {
+			r = append(r, newTerm(string(w[i])))
+		} else {
+			r = append(r, distillTerms(w[:i])...)
+			r = append(r, newTerm(string(w[i])))
 		}
-		str += term.string
+
+		if i+1 < len(w) {
+			r = append(r, distillTerms(w[i+1:])...)
+		}
+
+		return
 	}
+
+	terms := []*term{}
+
+	for puncs.MatchString(w) {
+		terms = append(terms, newTerm(string(w[len(w)-1])))
+		w = w[:len(w)-1]
+	}
+
+	if w != "" {
+		terms = append(terms, newTerm(w))
+	}
+
+	for i, _ := range terms {
+		r = append(r, terms[len(terms)-i-1])
+	}
+
 	return
 }
 
-func isOpenMarks(m string) bool {
-	return m == "[" || m == "("
+func (a *article) String() (str string) {
+	for i, term := range a.terms {
+		if !term.isPuncs() {
+			if i == 0 {
+				if term.isLF() || a.terms[i+1].isLF() {
+					goto appendTerm
+				}
+			} else {
+				if a.terms[i-1].isLF() || a.terms[i+1].isLF() {
+					goto appendTerm
+				}
+
+				if !a.terms[i-1].isOpenMarks() && !term.isCloseMarks() {
+					str += " "
+				}
+			}
+		}
+	appendTerm:
+		str += term.string
+	}
+
+	return
 }
 
-func isCloseMarks(m string) bool {
-	return m == "]" || m == ")"
+func (t *term) isPuncs() bool {
+	return puncs.MatchString(t.string)
+}
+
+func (t term) isOpenMarks() bool {
+	return t.string == "[" || t.string == "("
+}
+
+func (t term) isLF() bool {
+	return t.string == "\n"
+}
+
+func (t term) isCloseMarks() bool {
+	return t.string == "]" || t.string == ")"
 }
 
 func (a article) new() prose {
@@ -149,6 +198,10 @@ func (t *term) indexIn(p prose, i int) int {
 	}
 	t.pos[p.(*article).id] = i
 	return i
+}
+
+func (t *term) String() string {
+	return t.string
 }
 
 type stringProse struct {
