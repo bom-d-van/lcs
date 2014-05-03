@@ -30,6 +30,12 @@ type article struct {
 	terms []*term
 }
 
+func LCSArticle(oriR, editR io.Reader) string {
+	ori, edit := newArticle(oriR), newArticle(editR)
+	lcs := LCS(ori, edit)
+	return Diff(ori, edit, lcs).(*article).String()
+}
+
 var puncs = regexp.MustCompile("[,!;:\"?\\.]$")
 
 func newArticle(ori io.Reader) *article {
@@ -202,6 +208,12 @@ type stringProse struct {
 	// string
 	words []*byteWord
 	id    int
+}
+
+func LCSPrimitive(oriR, editR string) string {
+	ori, edit := newStringProse(oriR), newStringProse(editR)
+	lcs := LCS(ori, edit)
+	return Diff(ori, edit, lcs).(*stringProse).String()
 }
 
 var (
