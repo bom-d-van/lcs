@@ -9,34 +9,28 @@ import (
 	"sync"
 )
 
-type prose interface {
-	new() prose
-	len() int
-	word(i int) word
-	slice(i, j int) prose
-	append(op prose)
-	// prepend(op prose)
-	appendWord(w word)
-	// prependWord(w word)
-	wrapDel()
-	wrapIns()
+type Prose interface {
+	New() Prose
+	Len() int
+	Word(i int) Word
+	Slice(i, j int) Prose
+	Append(op Prose)
+	AppendWord(w Word)
+	WrapDel()
+	WrapIns()
 }
 
-type word interface {
-	isEqual(ow word) bool
-	indexIn(p prose, i int) int
+type Word interface {
+	IsEqual(ow Word) bool
+	IndexIn(p Prose, i int) int
 }
 
 type article struct {
-	id int
-	// origin string
+	id    int
 	terms []*term
 }
 
-var (
-	// puncs = ",!;:\"?.\n"
-	puncs = regexp.MustCompile("[,!;:\"?\\.]$")
-)
+var puncs = regexp.MustCompile("[,!;:\"?\\.]$")
 
 func newArticle(ori io.Reader) *article {
 	a := article{id: genSpId()}
@@ -124,57 +118,57 @@ func (t term) isCloseMarks() bool {
 	return t.string == "]" || t.string == ")"
 }
 
-func (a article) new() prose {
+func (a article) New() Prose {
 	return &article{id: genSpId()}
 }
 
-func (a article) len() int {
+func (a article) Len() int {
 	return len(a.terms)
 }
 
-func (a article) word(i int) word {
+func (a article) Word(i int) Word {
 	return a.terms[i]
 }
 
-func (a article) slice(i, j int) prose {
+func (a article) Slice(i, j int) Prose {
 	na := new(article)
 	na.id = a.id
 	na.terms = a.terms[i:j]
 	return na
 }
 
-func (a *article) append(op prose) {
+func (a *article) Append(op Prose) {
 	oa := op.(*article)
 	// a.origin += oa.origin
 	a.terms = append(a.terms, oa.terms...)
 }
 
-func (a *article) prepend(op prose) {
+func (a *article) Prepend(op Prose) {
 	oa := op.(*article)
 	// a.origin = oa.origin + a.origin
 	a.terms = append(oa.terms, a.terms...)
 }
 
-func (a *article) appendWord(w word) {
+func (a *article) AppendWord(w Word) {
 	t := w.(*term)
 	// a.origin += t.string
 	a.terms = append(a.terms, t)
 }
 
-func (a *article) prependWord(w word) {
+func (a *article) PrependWord(w Word) {
 	t := w.(*term)
 	// a.origin = t.string + a.origin
 	a.terms = append([]*term{t}, a.terms...)
 }
 
-func (a *article) wrapDel() {
-	a.appendWord(newTerm("]"))
+func (a *article) WrapDel() {
+	a.AppendWord(newTerm("]"))
 	// a.origin = "[" + a.origin
 	a.terms = append([]*term{newTerm("[")}, a.terms...)
 }
 
-func (a *article) wrapIns() {
-	a.appendWord(newTerm(")"))
+func (a *article) WrapIns() {
+	a.AppendWord(newTerm(")"))
 	// a.origin = "(" + a.origin
 	a.terms = append([]*term{newTerm("(")}, a.terms...)
 }
@@ -188,11 +182,11 @@ func newTerm(cont string) *term {
 	return &term{string: cont, pos: map[int]int{}}
 }
 
-func (t term) isEqual(ow word) bool {
+func (t term) IsEqual(ow Word) bool {
 	return t.string == ow.(*term).string
 }
 
-func (t *term) indexIn(p prose, i int) int {
+func (t *term) IndexIn(p Prose, i int) int {
 	if i == -1 {
 		return t.pos[p.(*article).id]
 	}
@@ -235,68 +229,55 @@ func newStringProse(content string) (sp *stringProse) {
 	return
 }
 
-func (s stringProse) len() int {
-	// return len(s.string)
+func (s stringProse) Len() int {
 	return len(s.words)
 }
 
-func (s stringProse) word(i int) word {
+func (s stringProse) Word(i int) Word {
 	return s.words[i]
 }
 
-func (s stringProse) slice(i, j int) prose {
-	// sp := stringProse(s[i:j])
-	// return &stringProse{s.string[i:j], genSpId()}
-	// p.words = make([]byteWord, j-i)
-	// copy(p.words, s.words[i:j])
-	p := newStringProse(s.sliceString(i, j))
+func (s stringProse) Slice(i, j int) Prose {
+	p := newStringProse(s.SliceString(i, j))
 	p.id = s.id
 	return p
 }
 
-func (s stringProse) sliceString(i, j int) (str string) {
+func (s stringProse) SliceString(i, j int) (str string) {
 	for _, w := range s.words[i:j] {
 		str += string(w.byte)
 	}
 	return
 }
 
-func (s *stringProse) append(op prose) {
-	// s.string += op.(*stringProse).string
+func (s *stringProse) Append(op Prose) {
 	s.words = append(s.words, op.(*stringProse).words...)
 }
 
-func (s *stringProse) prepend(op prose) {
-	// *s = stringProse(string(*op.(*stringProse)) + string(*s))
-	// s.string = op.(*stringProse).string + s.string
+func (s *stringProse) Prepend(op Prose) {
 	s.words = append(op.(*stringProse).words, s.words...)
 }
 
-func (s *stringProse) prependWord(w word) {
-	// *s = stringProse(string(byte(w.(byteWord).byte)) + string(*s))
-	// s.string = string(w.(*byteWord).byte) + s.string
+func (s *stringProse) PrependWord(w Word) {
 	s.words = append([]*byteWord{w.(*byteWord)}, s.words...)
 }
 
-func (s *stringProse) appendWord(w word) {
+func (s *stringProse) AppendWord(w Word) {
 	s.words = append(s.words, w.(*byteWord))
 }
 
-func (s stringProse) new() prose {
-	// np := stringProse("")
+func (s stringProse) New() Prose {
 	return &stringProse{[]*byteWord{}, genSpId()}
 }
 
-func (s *stringProse) wrapDel() {
-	// s.string = "[" + s.string + "]"
-	s.prependWord(newByteWord('['))
-	s.appendWord(newByteWord(']'))
+func (s *stringProse) WrapDel() {
+	s.PrependWord(newByteWord('['))
+	s.AppendWord(newByteWord(']'))
 }
 
-func (s *stringProse) wrapIns() {
-	// s.string = "(" + s.string + ")"
-	s.prependWord(newByteWord('('))
-	s.appendWord(newByteWord(')'))
+func (s *stringProse) WrapIns() {
+	s.PrependWord(newByteWord('('))
+	s.AppendWord(newByteWord(')'))
 }
 
 func (s stringProse) String() (str string) {
@@ -318,11 +299,11 @@ func newByteWord(b byte) (bw *byteWord) {
 	return
 }
 
-func (b byteWord) isEqual(ow word) bool {
+func (b byteWord) IsEqual(ow Word) bool {
 	return byte(b.byte) == byte(ow.(*byteWord).byte)
 }
 
-func (b *byteWord) indexIn(p prose, i int) int {
+func (b *byteWord) IndexIn(p Prose, i int) int {
 	if i == -1 {
 		return b.pos[p.(*stringProse).id]
 	}
@@ -334,9 +315,9 @@ func (b byteWord) String() string {
 	return string(b.byte)
 }
 
-func LCS(a, b prose) prose {
-	aLen := a.len()
-	bLen := b.len()
+func LCS(a, b Prose) Prose {
+	aLen := a.Len()
+	bLen := b.Len()
 	lengths := make([][]int, aLen+1)
 	for i := 0; i <= aLen; i++ {
 		lengths[i] = make([]int, bLen+1)
@@ -345,7 +326,7 @@ func LCS(a, b prose) prose {
 	// row 0 and column 0 are initialized to 0 already
 	for i := 0; i < aLen; i++ {
 		for j := 0; j < bLen; j++ {
-			if a.word(i).isEqual(b.word(j)) {
+			if a.Word(i).IsEqual(b.Word(j)) {
 				lengths[i+1][j+1] = lengths[i][j] + 1
 			} else if lengths[i+1][j] > lengths[i][j+1] {
 				lengths[i+1][j+1] = lengths[i+1][j]
@@ -360,91 +341,91 @@ func LCS(a, b prose) prose {
 	// }
 
 	// read the substring out from the matrix
-	s := a.new()
+	s := a.New()
 	for x, y := aLen, bLen; x != 0 && y != 0; {
 		if lengths[x][y] == lengths[x-1][y] {
 			x--
 		} else if lengths[x][y] == lengths[x][y-1] {
 			y--
 		} else {
-			w := a.word(x - 1)
-			w.indexIn(a, x-1)
-			w.indexIn(b, y-1)
-			s.appendWord(w)
+			w := a.Word(x - 1)
+			w.IndexIn(a, x-1)
+			w.IndexIn(b, y-1)
+			s.AppendWord(w)
 			x--
 			y--
 		}
 	}
 
 	// reverse string
-	r := a.new()
-	for i := 0; i < s.len(); i++ {
-		r.appendWord(s.word(s.len() - 1 - i))
+	r := a.New()
+	for i := 0; i < s.Len(); i++ {
+		r.AppendWord(s.Word(s.Len() - 1 - i))
 	}
 	return r
 }
 
-func Diff(ori, edit, lcs prose) prose {
+func Diff(ori, edit, lcs Prose) Prose {
 	// println("---->")
 	// fmt.Println(ori, edit, lcs)
-	if lcs.len() == 0 {
-		ori.wrapDel()
-		edit.wrapIns()
-		ori.append(edit)
+	if lcs.Len() == 0 {
+		ori.WrapDel()
+		edit.WrapIns()
+		ori.Append(edit)
 		return ori
 	}
 
-	diff := ori.new()
+	diff := ori.New()
 	lastIOri := -1
 	lastIEdit := -1
-	lenOri := ori.len()
-	lenEdit := edit.len()
-	lenLCS := lcs.len()
+	lenOri := ori.Len()
+	lenEdit := edit.Len()
+	lenLCS := lcs.Len()
 	for i := 0; i < lenLCS; i++ {
-		w := lcs.word(i)
-		oi := w.indexIn(ori, -1)
+		w := lcs.Word(i)
+		oi := w.IndexIn(ori, -1)
 		if lenOri > i && oi != i {
 			// deletion
 			// fmt.Printf("--> %+v\n", w.(*term).pos)
 			// println(w.(*term).string)
 			// println(lastIOri+1, oi)
 			// fmt.Println(ori.(*article).id)
-			del := ori.slice(lastIOri+1, oi)
-			if del.len() > 0 {
-				del.wrapDel()
-				diff.append(del)
+			del := ori.Slice(lastIOri+1, oi)
+			if del.Len() > 0 {
+				del.WrapDel()
+				diff.Append(del)
 			}
 		}
 		lastIOri = oi
-		ei := w.indexIn(edit, -1)
+		ei := w.IndexIn(edit, -1)
 		if lenEdit > i && ei != i {
 			// insertion
-			ins := edit.slice(lastIEdit+1, ei)
-			if ins.len() > 0 {
-				ins.wrapIns()
-				diff.append(ins)
+			ins := edit.Slice(lastIEdit+1, ei)
+			if ins.Len() > 0 {
+				ins.WrapIns()
+				diff.Append(ins)
 			}
 		}
-		diff.appendWord(w)
+		diff.AppendWord(w)
 		lastIEdit = ei
 	}
 
 	// deletion and insertion after last word of ori and edit
-	lastw := lcs.word(lcs.len() - 1)
-	lastIOri = lastw.indexIn(ori, -1)
+	lastw := lcs.Word(lcs.Len() - 1)
+	lastIOri = lastw.IndexIn(ori, -1)
 	if lenOri > lastIOri+1 {
-		del := ori.slice(lastIOri+1, lenOri)
-		if del.len() > 0 {
-			del.wrapDel()
-			diff.append(del)
+		del := ori.Slice(lastIOri+1, lenOri)
+		if del.Len() > 0 {
+			del.WrapDel()
+			diff.Append(del)
 		}
 	}
-	lastIEdit = lastw.indexIn(edit, -1)
+	lastIEdit = lastw.IndexIn(edit, -1)
 	if lenEdit > lastIEdit+1 {
-		ins := edit.slice(lastIEdit+1, lenEdit)
-		if ins.len() > 0 {
-			ins.wrapIns()
-			diff.append(ins)
+		ins := edit.Slice(lastIEdit+1, lenEdit)
+		if ins.Len() > 0 {
+			ins.WrapIns()
+			diff.Append(ins)
 		}
 	}
 
